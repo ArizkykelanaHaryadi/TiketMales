@@ -1,31 +1,29 @@
 import { useState, useCallback } from "react";
 import { useTicket } from "../../context/kci/TicketContext";
 
-const FONT = "'Times New Roman', Times, serif";
-const FONT_SIZE = "12px";
-
 const SEVERITY_COLOR = {
-  high: { bg: "#fee2e2", text: "#991b1b", border: "#fca5a5" },
-  medium: { bg: "#fef3c7", text: "#92400e", border: "#fcd34d" },
-  low: { bg: "#dcfce7", text: "#166534", border: "#86efac" },
-  critical: { bg: "#fae8ff", text: "#701a75", border: "#e879f9" },
+  high:     { bg: "bg-red-950/60",    text: "text-red-400",    border: "border-red-500/40"    },
+  medium:   { bg: "bg-amber-950/60",  text: "text-amber-400",  border: "border-amber-500/40"  },
+  low:      { bg: "bg-emerald-950/60",text: "text-emerald-400",border: "border-emerald-500/40"},
+  critical: { bg: "bg-purple-950/60", text: "text-purple-400", border: "border-purple-500/40" },
 };
 
 function SeverityBadge({ value }) {
-  const key = (value || "").toLowerCase();
-  const c = SEVERITY_COLOR[key] || { bg: "#f1f5f9", text: "#475569", border: "#cbd5e1" };
+  const c = SEVERITY_COLOR[(value || "").toLowerCase()] ?? {
+    bg: "bg-slate-800", text: "text-slate-400", border: "border-slate-600",
+  };
   return (
-    <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`, borderRadius: "999px", padding: "2px 10px", fontSize: FONT_SIZE, fontFamily: FONT, fontWeight: 600, whiteSpace: "nowrap" }}>
+    <span className={`inline-block px-2.5 py-px rounded-full text-[10px] font-bold border font-mono whitespace-nowrap ${c.bg} ${c.text} ${c.border}`}>
       {value}
     </span>
   );
 }
 
 function StatusBadge({ value }) {
-  const v = (value || "").toLowerCase();
-  const isOpen = v.includes("open") || v.includes("new");
+  const isOpen = (value || "").toLowerCase().match(/open|new/);
   return (
-    <span style={{ background: isOpen ? "#fef3c7" : "#dcfce7", color: isOpen ? "#92400e" : "#166534", border: `1px solid ${isOpen ? "#fcd34d" : "#86efac"}`, borderRadius: "999px", padding: "2px 10px", fontSize: FONT_SIZE, fontFamily: FONT, fontWeight: 600, whiteSpace: "nowrap" }}>
+    <span className={`inline-block px-2.5 py-px rounded-full text-[10px] font-bold border font-mono whitespace-nowrap
+      ${isOpen ? "bg-amber-950/60 text-amber-400 border-amber-500/40" : "bg-emerald-950/60 text-emerald-400 border-emerald-500/40"}`}>
       {value || "-"}
     </span>
   );
@@ -37,19 +35,15 @@ export default function TicketParserPage() {
   const [copiedRow, setCopiedRow] = useState(null);
 
   const escapeCell = useCallback((val) => {
-  const s = (val ?? "-").toString().replace(/\t|\r/g, " ");
-  return s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
-}, []);
+    const s = (val ?? "-").toString().replace(/\t|\r/g, " ");
+    return s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+  }, []);
 
-
-  // Tab-separated: paste langsung ke Google Sheets
-const buildTSV = useCallback((rows, includeHeader = true) => {
-  const header = columns.map((c) => c.label).join("\t");
-  const body = rows.map((ticket) =>
-    columns.map((c) => escapeCell(ticket[c.key])).join("\t")
-  );
-  return includeHeader ? [header, ...body].join("\n") : body.join("\n");
-}, [columns, escapeCell]);
+  const buildTSV = useCallback((rows, includeHeader = true) => {
+    const header = columns.map((c) => c.label).join("\t");
+    const body   = rows.map((ticket) => columns.map((c) => escapeCell(ticket[c.key])).join("\t"));
+    return includeHeader ? [header, ...body].join("\n") : body.join("\n");
+  }, [columns, escapeCell]);
 
   const copyAll = useCallback(() => {
     navigator.clipboard.writeText(buildTSV(tickets, true)).then(() => {
@@ -58,73 +52,92 @@ const buildTSV = useCallback((rows, includeHeader = true) => {
     });
   }, [tickets, buildTSV]);
 
-const copyRow = useCallback((ticket, idx) => {
-  const row = columns.map((c) => escapeCell(ticket[c.key])).join("\t");
-  navigator.clipboard.writeText(row).then(() => {
-    setCopiedRow(idx);
-    setTimeout(() => setCopiedRow(null), 2500);
-  });
-}, [columns, escapeCell]);
+  const copyRow = useCallback((ticket, idx) => {
+    const row = columns.map((c) => escapeCell(ticket[c.key])).join("\t");
+    navigator.clipboard.writeText(row).then(() => {
+      setCopiedRow(idx);
+      setTimeout(() => setCopiedRow(null), 2500);
+    });
+  }, [columns, escapeCell]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0f172a", fontFamily: FONT, fontSize: FONT_SIZE, color: "#e2e8f0" }}>
+    <div className="min-h-screen text-slate-300 text-xs font-mono">
 
       {/* ── Header ── */}
-      <div style={{ background: "#1e293b", borderBottom: "1px solid #334155", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: "linear-gradient(135deg,#ef4444,#f97316)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🛡</div>
+      <div className="flex items-center justify-between flex-wrap gap-3 px-7 py-3.5 border-b border-slate-700/50 bg-[#0d1117]/80">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-700 flex items-center justify-center text-lg shrink-0">
+            🚆
+          </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "#f8fafc", fontFamily: FONT }}>K C I Ticket Parser</div>
-            <div style={{ fontSize: FONT_SIZE, color: "#64748b", fontFamily: FONT }}>Ticket → Google Sheets</div>
+            <div className="font-bold text-[13px] text-slate-100 font-serif">KCI Ticket Parser</div>
+            <div className="text-[10px] text-slate-600">Ticket → Google Sheets</div>
           </div>
         </div>
+
         {tickets.length > 0 && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {/* Copy ALL + header */}
-            <button onClick={copyAll} style={{ padding: "7px 16px", borderRadius: 8, border: copiedAll ? "1px solid #22c55e" : "1px solid #3b82f6", background: copiedAll ? "#14532d" : "#1e3a5f", color: copiedAll ? "#4ade80" : "#60a5fa", fontSize: FONT_SIZE, fontFamily: FONT, cursor: "pointer", fontWeight: 700 }}>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={copyAll}
+              className={`px-4 py-1.5 rounded-md text-[11px] font-bold border transition-all
+                ${copiedAll
+                  ? "border-emerald-500/50 bg-emerald-950/60 text-emerald-400"
+                  : "border-blue-500/40 bg-blue-950/50 text-blue-400 hover:bg-blue-900/50"}`}
+            >
               {copiedAll ? "✓ Tersalin!" : "⎘ Copy Semua ke Sheets"}
             </button>
-            <button onClick={exportToCSV} style={{ padding: "7px 16px", borderRadius: 8, border: "none", background: "#22c55e", color: "#fff", fontSize: FONT_SIZE, fontFamily: FONT, cursor: "pointer", fontWeight: 700 }}>
+            <button
+              onClick={exportToCSV}
+              className="px-4 py-1.5 rounded-md text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all"
+            >
               ↓ Export CSV
             </button>
-            <button onClick={clearAll} style={{ padding: "7px 16px", borderRadius: 8, border: "1px solid #ef4444", background: "transparent", color: "#ef4444", fontSize: FONT_SIZE, fontFamily: FONT, cursor: "pointer" }}>
+            <button
+              onClick={clearAll}
+              className="px-4 py-1.5 rounded-md text-[11px] border border-red-500/40 text-red-400 hover:bg-red-950/40 transition-all"
+            >
               Clear All
             </button>
           </div>
         )}
       </div>
 
-      <div style={{ width: "100%", maxWidth: "100%", padding: "22px 20px", boxSizing: "border-box" }}>
+      <div className="w-full px-5 py-6 box-border">
 
         {/* ── Hint Banner ── */}
         {tickets.length > 0 && (
-          <div style={{ background: "#0c1a2e", border: "1px solid #1d4ed8", borderRadius: 10, padding: "11px 16px", marginBottom: 18, fontSize: FONT_SIZE, fontFamily: FONT, color: "#93c5fd", display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <span>💡</span>
+          <div className="flex gap-2.5 items-start bg-blue-950/40 border border-blue-500/25 rounded-lg px-4 py-3 mb-5 text-[11px] text-blue-300 leading-relaxed">
+            <span className="shrink-0">💡</span>
             <span>
-              <b style={{ color: "#bfdbfe" }}>Cara copy ke Google Sheets:</b><br />
-              • <b style={{ color: "#60a5fa" }}>⎘ Copy Semua ke Sheets</b> → buka Google Sheets → klik sel <b>A1</b> → <b>Ctrl+V</b> (paste dengan header).<br />
-              • <b style={{ color: "#60a5fa" }}>⎘</b> per baris → paste di baris kosong pada sheet yang sudah ada header.
+              <span className="text-blue-200 font-bold">Cara copy ke Google Sheets:</span><br />
+              • <span className="text-blue-400 font-bold">⎘ Copy Semua ke Sheets</span> → buka Google Sheets → klik sel <span className="text-blue-400 font-bold">A1</span> → <span className="text-blue-400 font-bold">Ctrl+V</span> (paste dengan header).<br />
+              • <span className="text-blue-400 font-bold">⎘</span> per baris → paste di baris kosong pada sheet yang sudah ada header.
             </span>
           </div>
         )}
 
         {/* ── Input ── */}
-        <div style={{ background: "#1e293b", borderRadius: 12, border: "1px solid #334155", padding: "20px", marginBottom: 18 }}>
-          <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, fontFamily: FONT, marginBottom: 10 }}>📋 Paste Ticket SOC</div>
+        <div className="bg-slate-900/70 border border-slate-700/50 rounded-xl p-5 mb-5">
+          <div className="font-bold text-slate-200 text-[13px] font-serif mb-3">📋 Paste Ticket SOC</div>
           <textarea
             value={rawInput}
             onChange={(e) => setRawInput(e.target.value)}
             placeholder={"Paste teks ticket SOC di sini...\n\nCase ID : 20260414-013\nSecurity Event : Public to Private Exploit Anomaly\nSeverity : High\n..."}
-            style={{ width: "100%", minHeight: 200, background: "#0f172a", border: "1px solid #475569", borderRadius: 8, color: "#e2e8f0", fontSize: FONT_SIZE, fontFamily: FONT, padding: "12px", resize: "vertical", outline: "none", lineHeight: 1.8, boxSizing: "border-box" }}
+            className="w-full min-h-[200px] bg-[#0d1117]/90 border border-slate-700/60 rounded-lg text-slate-300 text-[11px] font-mono p-3 resize-y outline-none leading-relaxed focus:border-blue-500/50 transition-colors"
           />
           {error && (
-            <div style={{ marginTop: 8, color: "#f87171", fontSize: FONT_SIZE, fontFamily: FONT, background: "#450a0a", borderRadius: 6, padding: "8px 12px" }}>⚠ {error}</div>
+            <div className="mt-2 text-red-400 text-[11px] bg-red-950/50 border border-red-500/30 rounded-md px-3 py-2">
+              ⚠ {error}
+            </div>
           )}
-          <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
+          <div className="mt-3 flex justify-end">
             <button
               onClick={() => rawInput.trim() && addTicket(rawInput)}
               disabled={!rawInput.trim()}
-              style={{ padding: "9px 22px", borderRadius: 8, border: "none", background: rawInput.trim() ? "#3b82f6" : "#1e3a5f", color: rawInput.trim() ? "#fff" : "#475569", fontWeight: 700, fontSize: 13, fontFamily: FONT, cursor: rawInput.trim() ? "pointer" : "not-allowed" }}
+              className={`px-5 py-2 rounded-lg text-[12px] font-bold transition-all
+                ${rawInput.trim()
+                  ? "bg-blue-600 hover:bg-blue-500 text-white cursor-pointer"
+                  : "bg-slate-800 text-slate-600 cursor-not-allowed"}`}
             >
               + Parse Ticket
             </button>
@@ -133,16 +146,17 @@ const copyRow = useCallback((ticket, idx) => {
 
         {/* ── Stats ── */}
         {tickets.length > 0 && (
-          <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+          <div className="flex gap-2.5 mb-5 flex-wrap">
             {[
-              { label: "Total Tickets", value: tickets.length, color: "#3b82f6" },
-              { label: "High Severity", value: tickets.filter(t => (t.severity || "").toLowerCase() === "high").length, color: "#ef4444" },
-              { label: "Closed", value: tickets.filter(t => (t.statusTicketing || "").toLowerCase().includes("closed")).length, color: "#22c55e" },
-              { label: "Open", value: tickets.filter(t => !(t.statusTicketing || "").toLowerCase().includes("closed")).length, color: "#f59e0b" },
+              { label: "Total Tickets", value: tickets.length,                                                                          color: "text-blue-400",    top: "border-blue-400"    },
+              { label: "High Severity", value: tickets.filter(t => (t.severity||"").toLowerCase()==="high").length,                     color: "text-red-400",     top: "border-red-400"     },
+              { label: "Closed",        value: tickets.filter(t => (t.statusTicketing||"").toLowerCase().includes("closed")).length,    color: "text-emerald-400", top: "border-emerald-400" },
+              { label: "Open",          value: tickets.filter(t => !(t.statusTicketing||"").toLowerCase().includes("closed")).length,   color: "text-amber-400",   top: "border-amber-400"   },
             ].map((s) => (
-              <div key={s.label} style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 10, padding: "10px 18px", minWidth: 110, flex: "1 1 auto" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: s.color, fontFamily: FONT }}>{s.value}</div>
-                <div style={{ fontSize: FONT_SIZE, color: "#64748b", fontFamily: FONT }}>{s.label}</div>
+              <div key={s.label}
+                className={`bg-slate-900/70 border border-slate-700/50 rounded-lg px-4 py-3 min-w-[110px] flex-1 border-t-2 ${s.top}`}>
+                <div className={`text-xl font-bold font-mono ${s.color}`}>{s.value}</div>
+                <div className="text-[10px] text-slate-600 mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
@@ -150,51 +164,54 @@ const copyRow = useCallback((ticket, idx) => {
 
         {/* ── Table ── */}
         {tickets.length > 0 ? (
-          <div style={{ background: "#1e293b", borderRadius: 12, border: "1px solid #334155", overflow: "hidden" }}>
-            <div style={{ padding: "12px 18px", borderBottom: "1px solid #334155", fontSize: FONT_SIZE, fontFamily: FONT, color: "#94a3b8" }}>
+          <div className="bg-slate-900/70 border border-slate-700/50 rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-700/50 text-[10px] text-slate-500">
               {tickets.length} ticket(s) — copy per baris atau semua sekaligus
             </div>
-            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: FONT_SIZE, fontFamily: FONT }}>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[11px] font-mono">
                 <thead>
-                  <tr style={{ background: "#0f172a" }}>
-                    <th style={{ padding: "9px 10px", textAlign: "left", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #334155", whiteSpace: "nowrap", fontFamily: FONT, fontSize: FONT_SIZE }}>#</th>
+                  <tr className="bg-[#0d1117]/80">
+                    <th className="px-3 py-2.5 text-left text-slate-600 font-bold border-b border-slate-700/50 whitespace-nowrap">#</th>
                     {columns.map((col) => (
-                      <th key={col.key} style={{ padding: "9px 10px", textAlign: "left", color: "#94a3b8", fontWeight: 700, borderBottom: "1px solid #334155", whiteSpace: "nowrap", minWidth: 110, fontFamily: FONT, fontSize: FONT_SIZE }}>
+                      <th key={col.key} className="px-3 py-2.5 text-left text-slate-500 font-bold border-b border-slate-700/50 whitespace-nowrap min-w-[110px]">
                         {col.label}
                       </th>
                     ))}
-                    <th style={{ padding: "9px 10px", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #334155", fontFamily: FONT, fontSize: FONT_SIZE, textAlign: "center", minWidth: 80 }}>Aksi</th>
+                    <th className="px-3 py-2.5 text-center text-slate-600 font-bold border-b border-slate-700/50 min-w-[80px]">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {tickets.map((ticket, idx) => (
-                    <tr key={idx} style={{ borderBottom: "1px solid #263348", background: idx % 2 === 0 ? "#1e293b" : "#162032" }}>
-                      <td style={{ padding: "9px 10px", color: "#64748b", fontWeight: 700, fontFamily: FONT, fontSize: FONT_SIZE }}>{idx + 1}</td>
+                    <tr key={idx}
+                      className={`border-b border-slate-800/60 ${idx % 2 === 0 ? "bg-slate-900/40" : "bg-slate-800/20"} hover:bg-slate-700/20 transition-colors`}>
+                      <td className="px-3 py-2.5 text-slate-600 font-bold">{idx + 1}</td>
                       {columns.map((col) => {
                         const val = ticket[col.key] ?? "-";
-                        if (col.key === "severity") return <td key={col.key} style={{ padding: "9px 10px", whiteSpace: "nowrap" }}><SeverityBadge value={val} /></td>;
-                        if (col.key === "statusTicketing") return <td key={col.key} style={{ padding: "9px 10px", whiteSpace: "nowrap" }}><StatusBadge value={val} /></td>;
+                        if (col.key === "severity")       return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><SeverityBadge value={val} /></td>;
+                        if (col.key === "statusTicketing") return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><StatusBadge value={val} /></td>;
                         return (
-                          <td key={col.key} title={val} style={{ padding: "9px 10px", color: val === "-" ? "#475569" : "#e2e8f0", whiteSpace: "nowrap", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", fontFamily: FONT, fontSize: FONT_SIZE }}>
+                          <td key={col.key} title={val}
+                            className={`px-3 py-2.5 whitespace-nowrap max-w-[180px] overflow-hidden text-ellipsis ${val === "-" ? "text-slate-700" : "text-slate-300"}`}>
                             {val}
                           </td>
                         );
                       })}
-                      <td style={{ padding: "9px 10px", textAlign: "center", whiteSpace: "nowrap" }}>
-                        {/* Copy 1 baris */}
+                      <td className="px-3 py-2.5 text-center whitespace-nowrap">
                         <button
                           onClick={() => copyRow(ticket, idx)}
                           title="Copy baris ini — paste di Google Sheets"
-                          style={{ background: copiedRow === idx ? "#14532d" : "transparent", border: `1px solid ${copiedRow === idx ? "#22c55e" : "#334155"}`, color: copiedRow === idx ? "#4ade80" : "#60a5fa", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: FONT_SIZE, fontFamily: FONT, marginRight: 5 }}
+                          className={`mr-1.5 px-2.5 py-1 rounded border text-[10px] transition-all
+                            ${copiedRow === idx
+                              ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-400"
+                              : "bg-transparent border-slate-700/60 text-blue-400 hover:border-blue-500/40"}`}
                         >
                           {copiedRow === idx ? "✓" : "⎘"}
                         </button>
-                        {/* Hapus */}
                         <button
                           onClick={() => removeTicket(idx)}
                           title="Hapus baris"
-                          style={{ background: "transparent", border: "1px solid #334155", color: "#ef4444", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: FONT_SIZE, fontFamily: FONT }}
+                          className="px-2.5 py-1 rounded border border-slate-700/60 text-red-400 hover:border-red-500/40 hover:bg-red-950/40 text-[10px] transition-all"
                         >
                           ×
                         </button>
@@ -206,12 +223,13 @@ const copyRow = useCallback((ticket, idx) => {
             </div>
           </div>
         ) : (
-          <div style={{ textAlign: "center", padding: "56px 20px", color: "#475569", background: "#1e293b", borderRadius: 12, border: "1px dashed #334155" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📄</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#64748b", fontFamily: FONT, marginBottom: 6 }}>Belum ada ticket</div>
-            <div style={{ fontSize: FONT_SIZE, fontFamily: FONT }}>Paste teks ticket SOC di atas lalu klik "Parse Ticket"</div>
+          <div className="text-center py-14 bg-slate-900/50 border border-dashed border-slate-700/40 rounded-xl">
+            <div className="text-4xl mb-3">📄</div>
+            <div className="text-[13px] font-bold text-slate-500 font-serif mb-1.5">Belum ada ticket</div>
+            <div className="text-[11px] text-slate-600">Paste teks ticket SOC di atas lalu klik "Parse Ticket"</div>
           </div>
         )}
+
       </div>
     </div>
   );

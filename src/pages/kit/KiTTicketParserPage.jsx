@@ -1,5 +1,10 @@
 import { useState, useCallback } from "react";
-import { useDJKITicket } from "../../context/djki/DJKITicketContext";
+import { useKiTTicket } from "../../context/kit/KiTTicketContext";
+
+const MANUAL_COLS = new Set([
+  "ticketDate", "ticketTime", "socResponseTime",
+  "ticket", "statusVirusTotal", "statusKaspersky", "statusEvent",
+]);
 
 const SEVERITY_COLOR = {
   high:     { bg: "#fee2e2", text: "#991b1b", border: "#fca5a5" },
@@ -21,25 +26,8 @@ function SeverityBadge({ value }) {
   );
 }
 
-function StatusBadge({ value }) {
-  const v      = (value || "").toLowerCase();
-  const isOpen = v.includes("open") || v.includes("new");
-  return (
-    <span
-      className={[
-        "rounded-full px-2.5 py-0.5 text-xs font-serif font-semibold whitespace-nowrap",
-        isOpen
-          ? "bg-amber-100 text-amber-800 border border-amber-300"
-          : "bg-emerald-100 text-emerald-800 border border-emerald-300",
-      ].join(" ")}
-    >
-      {value || "-"}
-    </span>
-  );
-}
-
-export default function DJKITicketParserPage() {
-  const { tickets, rawInput, setRawInput, error, addTicket, removeTicket, clearAll, exportToCSV, columns } = useDJKITicket();
+export default function KiTTicketParserPage() {
+  const { tickets, rawInput, setRawInput, error, addTicket, removeTicket, clearAll, exportToCSV, columns } = useKiTTicket();
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedRow, setCopiedRow] = useState(null);
 
@@ -72,15 +60,15 @@ export default function DJKITicketParserPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-3 px-7 py-3.5 border-b border-slate-700/50 bg-[#0d1117]/80">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center text-lg shrink-0">
-            🏛
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-lg shrink-0">
+            ⚙
           </div>
           <div>
             <div className="font-bold text-[15px] text-slate-50 font-serif">
-              SOC Ticket Parser — DJKI
+              SOC Ticket Parser — KiT
             </div>
             <div className="text-xs text-slate-500 font-serif">
-              Direktorat Jenderal Kekayaan Intelektual
+              Krakatau Information Technology
             </div>
           </div>
         </div>
@@ -100,7 +88,7 @@ export default function DJKITicketParserPage() {
             </button>
             <button
               onClick={exportToCSV}
-              className="px-4 py-1.5 rounded-lg border-none bg-emerald-500 text-white text-xs font-serif font-bold cursor-pointer hover:bg-emerald-400 transition-colors"
+              className="px-4 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-serif font-bold cursor-pointer hover:bg-emerald-400 transition-colors"
             >
               ↓ Export CSV
             </button>
@@ -119,12 +107,12 @@ export default function DJKITicketParserPage() {
         {/* ── Hint ── */}
         {tickets.length > 0 && (
           <div className="flex gap-2.5 items-start bg-blue-950/40 border border-blue-500/25 rounded-lg px-4 py-3 mb-5 text-[11px] text-blue-300 leading-relaxed">
-            <span>💡</span>
+            <span className="shrink-0">💡</span>
             <span>
               <b className="text-blue-200">Cara copy ke Google Sheets:</b><br />
               • <b className="text-blue-400">⎘ Copy Semua ke Sheets</b> → buka Google Sheets → klik sel <b>A1</b> → <b>Ctrl+V</b>.<br />
               • <b className="text-blue-400">⎘</b> per baris → paste di baris kosong sheet yang sudah ada header.<br />
-              • Kolom <b>Ticket Date &amp; Time, SOC Response Time, DJKI Respond/Response Time, Ticket ID, Log Source</b> diisi manual di Sheets.
+              • Kolom <b className="text-amber-400">kuning</b> diisi manual di Sheets: Ticket Date &amp; Time, SOC Response Time, Ticket, Status VirusTotal, Status Kaspersky, Status Event.
             </span>
           </div>
         )}
@@ -135,11 +123,11 @@ export default function DJKITicketParserPage() {
           <textarea
             value={rawInput}
             onChange={(e) => setRawInput(e.target.value)}
-            placeholder={"Paste teks ticket DJKI di sini...\n\nSec. Event : Public to Private Exploit Anomaly\nStage : Initial Attempts\nTactic : Initial Access (TA0001)\n..."}
+            placeholder={"Paste teks ticket Krakatau IT di sini...\n\nTicket Id : 2026/25-04/108\nSignature : ET CINS Active Threat Intelligence Poor Reputation IP group 81\nSeverity : Low\n..."}
             className="w-full min-h-[200px] bg-[#0d1117]/90 border border-slate-700/60 rounded-lg text-slate-300 text-[11px] font-mono p-3 resize-y outline-none leading-relaxed focus:border-blue-500/50 transition-colors"
           />
           {error && (
-            <div className="mt-2 text-red-400 text-[11px] bg-red-950/50 border border-red-500/30 rounded-md px-3 py-2">
+            <div className="mt-2 text-red-400 text-[11px] bg-red-950 border border-red-900 rounded-md px-3 py-2">
               ⚠ {error}
             </div>
           )}
@@ -163,14 +151,14 @@ export default function DJKITicketParserPage() {
         {tickets.length > 0 && (
           <div className="flex gap-2.5 mb-5 flex-wrap">
             {[
-              { label: "Total Tickets", value: tickets.length,                                                                         color: "text-blue-400",    top: "border-t-2 border-blue-400"    },
-              { label: "High Severity", value: tickets.filter(t => (t.severity||"").toLowerCase()==="high").length,                    color: "text-red-400",     top: "border-t-2 border-red-400"     },
-              { label: "Closed",        value: tickets.filter(t => (t.statusTicketing||"").toLowerCase().includes("closed")).length,   color: "text-emerald-400", top: "border-t-2 border-emerald-400" },
-              { label: "Open",          value: tickets.filter(t => !(t.statusTicketing||"").toLowerCase().includes("closed")).length,  color: "text-amber-400",   top: "border-t-2 border-amber-400"   },
+              { label: "Total Tickets", value: tickets.length,                                                                          color: "text-amber-400"   },
+              { label: "High",          value: tickets.filter(t => (t.severity || "").toLowerCase() === "high").length,                 color: "text-red-400"     },
+              { label: "Medium",        value: tickets.filter(t => (t.severity || "").toLowerCase() === "medium").length,               color: "text-orange-400"  },
+              { label: "Low",           value: tickets.filter(t => (t.severity || "").toLowerCase() === "low").length,                  color: "text-emerald-400" },
             ].map((s) => (
-              <div key={s.label} className={`bg-slate-900/70 border border-slate-700/50 rounded-lg px-4 py-3 min-w-[110px] flex-1 ${s.top}`}>
-                <div className={`text-xl font-bold font-mono ${s.color}`}>{s.value}</div>
-                <div className="text-[10px] text-slate-600 mt-0.5">{s.label}</div>
+              <div key={s.label} className="bg-slate-800 border border-slate-700 rounded-[10px] px-[18px] py-2.5 min-w-[100px] flex-1">
+                <div className={`text-xl font-bold font-serif ${s.color}`}>{s.value}</div>
+                <div className="text-xs text-slate-500 font-serif">{s.label}</div>
               </div>
             ))}
           </div>
@@ -211,8 +199,11 @@ export default function DJKITicketParserPage() {
                       <td className="px-3 py-2.5 text-slate-600 font-bold">{idx + 1}</td>
                       {columns.map((col) => {
                         const val = ticket[col.key] ?? "-";
-                        if (col.key === "severity")        return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><SeverityBadge value={val} /></td>;
-                        if (col.key === "statusTicketing") return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><StatusBadge value={val} /></td>;
+                        if (col.key === "severity") return (
+                          <td key={col.key} className="px-3 py-2.5 whitespace-nowrap">
+                            <SeverityBadge value={val} />
+                          </td>
+                        );
                         return (
                           <td
                             key={col.key}
