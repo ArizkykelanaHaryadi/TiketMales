@@ -122,7 +122,7 @@ export default function TicketParserPage() {
           <textarea
             value={rawInput}
             onChange={(e) => setRawInput(e.target.value)}
-            placeholder={"Paste teks ticket SOC di sini...\n\nCase ID : 20260414-013\nSecurity Event : Public to Private Exploit Anomaly\nSeverity : High\n..."}
+            placeholder={"Paste teks ticket KCI di sini...\n\nCase ID : 20260414-013\nSecurity Event : Public to Private Exploit Anomaly\nSeverity : High\n..."}
             className="w-full min-h-[200px] bg-[#0d1117]/90 border border-slate-700/60 rounded-lg text-slate-300 text-[11px] font-mono p-3 resize-y outline-none leading-relaxed focus:border-blue-500/50 transition-colors"
           />
           {error && (
