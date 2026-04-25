@@ -195,25 +195,43 @@ export default function Sidebar({ selected, setSelected }) {
         </nav>
 
         {/* ── Footer ── */}
-        <div className="px-4 py-3.5 border-t border-slate-800">
-          {/* Threat level bar */}
-          <div className="mb-3">
-            <div className="font-mono text-[9px] text-slate-700 uppercase tracking-widest mb-1.5">
-              Threat Level
-            </div>
-            <div className="h-0.5 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{ width: "62%", background: "linear-gradient(90deg, #60a5fa, #fbbf24)" }}
-              />
-            </div>
-            <div className="font-mono text-[9px] text-amber-400 mt-1">ELEVATED</div>
-          </div>
+       {/* ── Footer ── */}
+<div className="px-4 py-3.5 border-t border-slate-800">
+  {/* Threat level bar */}
+  <div className="mb-3">
+    <div className="font-mono text-[9px] text-slate-700 uppercase tracking-widest mb-1.5">
+      Threat Level
+    </div>
+    <div className="h-0.5 bg-slate-800 rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full"
+        style={{ width: "62%", background: "linear-gradient(90deg, #60a5fa, #fbbf24)" }}
+      />
+    </div>
+    <div className="font-mono text-[9px] text-amber-400 mt-1">ELEVATED</div>
+  </div>
 
-          <div className="font-mono text-[9px] text-slate-800 text-center">
-            v2.0 · BUILD {String(tick).padStart(4, "0")}
-          </div>
-        </div>
+  {/* IG LINK */}
+  <a
+    href="https://www.instagram.com/arizky_501/?utm_source=ig_web_button_share_sheet"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="flex items-center justify-center gap-1 font-mono text-[9px] text-slate-500 hover:text-pink-400 transition mb-1"
+  >
+    {/* SVG IG */}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="10"
+      height="10"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path d="M7.75 2C4.678 2 2 4.678 2 7.75v8.5C2 19.322 4.678 22 7.75 22h8.5C19.322 22 22 19.322 22 16.25v-8.5C22 4.678 19.322 2 16.25 2h-8.5zM12 7a5 5 0 110 10 5 5 0 010-10zm6.5-.75a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM12 9a3 3 0 100 6 3 3 0 000-6z"/>
+    </svg>
+
+    <span>Arizky Kelana Haryadi</span>
+  </a>
+</div>
       </aside>
     </>
   );

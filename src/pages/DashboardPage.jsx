@@ -322,7 +322,7 @@ export default function DashboardPage() {
 
           {/* ── Footer ── */}
           <div className="mt-7 pt-3.5 border-t border-slate-800 flex justify-between items-center">
-            <span className="font-mono text-[9px] text-slate-800">SOC-PARSER-SYS © 2026 — L1 SOC Analyst Tools</span>
+            <span className="font-mono text-[9px] text-slate-800">SOC-PARSER-SYS © 2026 — Arizky Kelana Haryadi</span>
             <span className="font-mono text-[9px] text-slate-800">BUILD 2.0.{String(tick).padStart(4, "0")}</span>
           </div>
 
