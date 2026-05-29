@@ -70,8 +70,12 @@ export default function TicketParserPage() {
             🚆
           </div>
           <div>
-            <div className="font-bold text-[13px] text-slate-100 font-serif">KCI Ticket Parser</div>
-            <div className="text-[10px] text-slate-600">Ticket → Google Sheets</div>
+            <div className="font-bold text-[15px] text-slate-50 font-serif">
+              SOC Ticket Parser — KCI
+            </div>
+            <div className="text-xs text-slate-500 font-serif">
+              Kereta Commuter Indonesia
+            </div>
           </div>
         </div>
 
@@ -172,31 +176,19 @@ export default function TicketParserPage() {
               <table className="w-full border-collapse text-[11px] font-mono">
                 <thead>
                   <tr className="bg-[#0d1117]/80">
+                    <th className="px-3 py-2.5 text-center text-slate-600 font-bold border-b border-slate-700/50 min-w-[80px]">Aksi</th>
                     <th className="px-3 py-2.5 text-left text-slate-600 font-bold border-b border-slate-700/50 whitespace-nowrap">#</th>
                     {columns.map((col) => (
                       <th key={col.key} className="px-3 py-2.5 text-left text-slate-500 font-bold border-b border-slate-700/50 whitespace-nowrap min-w-[110px]">
                         {col.label}
                       </th>
                     ))}
-                    <th className="px-3 py-2.5 text-center text-slate-600 font-bold border-b border-slate-700/50 min-w-[80px]">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {tickets.map((ticket, idx) => (
                     <tr key={idx}
                       className={`border-b border-slate-800/60 ${idx % 2 === 0 ? "bg-slate-900/40" : "bg-slate-800/20"} hover:bg-slate-700/20 transition-colors`}>
-                      <td className="px-3 py-2.5 text-slate-600 font-bold">{idx + 1}</td>
-                      {columns.map((col) => {
-                        const val = ticket[col.key] ?? "-";
-                        if (col.key === "severity")       return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><SeverityBadge value={val} /></td>;
-                        if (col.key === "statusTicketing") return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><StatusBadge value={val} /></td>;
-                        return (
-                          <td key={col.key} title={val}
-                            className={`px-3 py-2.5 whitespace-nowrap max-w-[180px] overflow-hidden text-ellipsis ${val === "-" ? "text-slate-700" : "text-slate-300"}`}>
-                            {val}
-                          </td>
-                        );
-                      })}
                       <td className="px-3 py-2.5 text-center whitespace-nowrap">
                         <button
                           onClick={() => copyRow(ticket, idx)}
@@ -216,6 +208,18 @@ export default function TicketParserPage() {
                           ×
                         </button>
                       </td>
+                      <td className="px-3 py-2.5 text-slate-600 font-bold">{idx + 1}</td>
+                      {columns.map((col) => {
+                        const val = ticket[col.key] ?? "-";
+                        if (col.key === "severity")       return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><SeverityBadge value={val} /></td>;
+                        if (col.key === "statusTicketing") return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><StatusBadge value={val} /></td>;
+                        return (
+                          <td key={col.key} title={val}
+                            className={`px-3 py-2.5 whitespace-nowrap max-w-[180px] overflow-hidden text-ellipsis ${val === "-" ? "text-slate-700" : "text-slate-300"}`}>
+                            {val}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>

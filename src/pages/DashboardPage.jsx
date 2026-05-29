@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const TENANTS = [
-  { name: "KCI",             icon: "🚆", color: "text-blue-400  border-blue-400",  accent: "#60a5fa", desc: "Kereta Cepat Indonesia",                   cols: 37, status: "ACTIVE" },
+  { name: "KCI",             icon: "🚆", color: "text-blue-400  border-blue-400",  accent: "#60a5fa", desc: "Kereta Commuter Indonesia",                   cols: 37, status: "ACTIVE" },
   { name: "DJKI",            icon: "🏛",  color: "text-sky-300   border-sky-300",   accent: "#7dd3fc", desc: "Direktorat Jenderal Kekayaan Intelektual", cols: 25, status: "ACTIVE" },
   { name: "KiT",             icon: "⚙",  color: "text-amber-400 border-amber-400", accent: "#fbbf24", desc: "Krakatau Information Technology",          cols: 23, status: "ACTIVE" },
   { name: "Pupuk Indonesia", icon: "🌱", color: "text-slate-500  border-slate-500", accent: "#64748b", desc: "PT Pupuk Indonesia (Persero)",              cols: 0,  status: "STANDBY" },

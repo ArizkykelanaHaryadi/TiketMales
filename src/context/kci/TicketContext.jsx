@@ -11,20 +11,24 @@ function parseTicketText(raw) {
     return fallback;
   };
 
-  const getMultiBlock = (label) => {
-    const regex = new RegExp(
-      `${label}\\s*:\\s*\\n([\\s\\S]*?)(?=\\n[A-Za-z][A-Za-z ]*\\s*:|$)`,
-      "i"
+const getMultiBlock = (label) => {
+  const regex = new RegExp(
+    `${label}\\s*:\\s*\\n([\\s\\S]*?)(?=\\n[A-Za-z][A-Za-z ]*\\s*:\\s*(?:\\n|$)|\\n=+|$)`,
+    "i"
+  );
+
+  const match = raw.match(regex);
+  if (!match) return [];
+
+  return match[1]
+    .split("\n")
+    .map((v) => v.trim())
+    .filter((v) => v 
+      && !v.match(/^=+$/)              // buang baris ====
+      && !v.match(/^[A-Za-z][A-Za-z ]*\s*:\s*$/)  // buang pure label
+      && !v.match(/^[-*•]?\s*[A-Z][a-z].*\s+SOC\s+/i) // buang baris narasi
     );
-
-    const match = raw.match(regex);
-    if (!match) return [];
-
-    return match[1]
-      .split("\n")
-      .map((v) => v.trim())
-      .filter((v) => v && !v.match(/^[A-Za-z ]+\s*:/));
-  };
+};
 
   const join = (arr) => (arr.length ? arr.join("\n") : "-");
 
@@ -39,7 +43,10 @@ function parseTicketText(raw) {
   const tactic = get([/Tactic\s*:\s*(.+)/i]);
   const technique = get([/Technique\s*:\s*(.+)/i]);
 
-  const signature = get([/Signature\s*:\s*(.+)/i]);
+  const signatureLines = getMultiBlock("Signature");
+const signature = signatureLines.length
+  ? signatureLines.join("\n")
+  : get([/Signature\s*:\s*(.+)/i]);
 
   // ===== ACTION (FIXED) =====
   let action = get([/Action\s*:\s*(.+)/i]);
@@ -169,6 +176,7 @@ const COLUMNS = [
   { key: "timeResolution", label: "Time Resolution" },
 
   { key: "statusTicketing", label: "Status Ticketing" },
+  { key: "note", label: "note" },
   { key: "reason", label: "Reason" },
   { key: "severity", label: "Severity" },
   { key: "ipSource", label: "IP Source" },

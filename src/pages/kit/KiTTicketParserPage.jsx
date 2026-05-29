@@ -174,6 +174,9 @@ export default function KiTTicketParserPage() {
               <table className="w-full border-collapse text-[11px] font-mono">
                 <thead>
                   <tr className="bg-[#0d1117]/80">
+                    <th className="px-3 py-2.5 text-center text-slate-600 font-bold border-b border-slate-700/50 min-w-[80px]">
+                      Aksi
+                    </th>
                     <th className="px-3 py-2.5 text-left text-slate-600 font-bold border-b border-slate-700/50 whitespace-nowrap">
                       #
                     </th>
@@ -182,9 +185,6 @@ export default function KiTTicketParserPage() {
                         {col.label}
                       </th>
                     ))}
-                    <th className="px-3 py-2.5 text-center text-slate-600 font-bold border-b border-slate-700/50 min-w-[80px]">
-                      Aksi
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -196,27 +196,6 @@ export default function KiTTicketParserPage() {
                         idx % 2 === 0 ? "bg-slate-900/40" : "bg-slate-800/20",
                       ].join(" ")}
                     >
-                      <td className="px-3 py-2.5 text-slate-600 font-bold">{idx + 1}</td>
-                      {columns.map((col) => {
-                        const val = ticket[col.key] ?? "-";
-                        if (col.key === "severity") return (
-                          <td key={col.key} className="px-3 py-2.5 whitespace-nowrap">
-                            <SeverityBadge value={val} />
-                          </td>
-                        );
-                        return (
-                          <td
-                            key={col.key}
-                            title={val}
-                            className={[
-                              "px-3 py-2.5 whitespace-nowrap max-w-[180px] overflow-hidden text-ellipsis",
-                              val === "-" ? "text-slate-700" : "text-slate-300",
-                            ].join(" ")}
-                          >
-                            {val}
-                          </td>
-                        );
-                      })}
                       <td className="px-3 py-2.5 text-center whitespace-nowrap">
                         <button
                           onClick={() => copyRow(ticket, idx)}
@@ -238,6 +217,27 @@ export default function KiTTicketParserPage() {
                           ×
                         </button>
                       </td>
+                      <td className="px-3 py-2.5 text-slate-600 font-bold">{idx + 1}</td>
+                      {columns.map((col) => {
+                        const val = ticket[col.key] ?? "-";
+                        if (col.key === "severity") return (
+                          <td key={col.key} className="px-3 py-2.5 whitespace-nowrap">
+                            <SeverityBadge value={val} />
+                          </td>
+                        );
+                        return (
+                          <td
+                            key={col.key}
+                            title={val}
+                            className={[
+                              "px-3 py-2.5 whitespace-nowrap max-w-[180px] overflow-hidden text-ellipsis",
+                              val === "-" ? "text-slate-700" : "text-slate-300",
+                            ].join(" ")}
+                          >
+                            {val}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>

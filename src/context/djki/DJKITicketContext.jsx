@@ -36,6 +36,15 @@ function extractBlock(raw, labelPattern) {
   return results.filter(Boolean);
 }
 
+// ── getMultiBlock: ambil semua nilai dari label, join dengan \n ──────────────
+function getMultiBlock(raw, labelPattern, mapFn = (l) => l) {
+  const lines = extractBlock(raw, labelPattern);
+  const results = lines.map(mapFn).filter(Boolean);
+  return results.length > 0
+  ? results.join("\r\n")
+  : "-";
+}
+
 function parseIpFirst(raw, labelPattern) {
   const mi = raw.match(labelPattern);
   if (mi && mi[1] && /[\d.]+/.test(mi[1])) {
@@ -104,65 +113,60 @@ function parseTicketDJKI(raw) {
   const notedM  = raw.match(/Noted\s*:\s*(.+)/i);
   const actionM = raw.match(/Action\s*:\s*(.+)/i);
   let action = "-";
-if (notedM && notedM[1].trim())        action = notedM[1].trim();
-else if (actionM && actionM[1].trim()) action = actionM[1].trim();
+  if (notedM && notedM[1].trim())        action = notedM[1].trim();
+  else if (actionM && actionM[1].trim()) action = actionM[1].trim();
 
-// 🔥 NORMALIZATION ACTION
-const lowerAction = action.toLowerCase();
+  // 🔥 NORMALIZATION ACTION
+  const lowerAction = action.toLowerCase();
+  if (lowerAction.includes("block") && lowerAction.includes("stellar")) {
+    action = "Block Manual Stellar";
+  } else if (lowerAction.includes("soar")) {
+    action = "SOAR Action";
+  }
 
-if (lowerAction.includes("block") && lowerAction.includes("stellar")) {
-  action = "Block Manual Stellar";
-} else if (lowerAction.includes("soar")) {
-  action = "SOAR Action";
-}
-
-const noted = "";
+  const noted = "";
 
   // ── Log Source — manual ──
   const logSource = "-";
 
-  // ── Source IP (first only) ──
-  const ipSource = parseIpFirst(raw, /Source IP\s*:\s*(.*)/i);
+  // ── Source IP (semua, join \n) ──
+  const ipSource = getMultiBlock(raw, /Source IP\s*:/i, (l) => {
+    const m = l.match(/([\d.]+)/);
+    return m ? m[1] : null;
+  });
 
-  // ── Country Code IP Source ──
-  let countryCodeIpSource = "-";
-  const srcCountryLabel = raw.match(/Source Country\s*:\s*(.+)/i);
-  if (srcCountryLabel && srcCountryLabel[1].trim()) {
-    countryCodeIpSource = srcCountryLabel[1].trim();
-  } else {
-    const srcBlock = extractBlock(raw, /Source IP\s*:/i);
-    for (const line of srcBlock) {
-      const m = line.match(/\(([^)]+)\)/);
-      if (m) { countryCodeIpSource = m[1].trim(); break; }
-    }
+  // ── Country Code IP Source (semua, join \n) ──
+  let countryCodeIpSource = getMultiBlock(raw, /Source Country\s*:/i);
+  // fallback: ambil dari kurung di blok Source IP
+  if (countryCodeIpSource === "-") {
+    countryCodeIpSource = getMultiBlock(raw, /Source IP\s*:/i, (l) => {
+      const m = l.match(/\(([^)]+)\)/);
+      return m ? m[1].trim() : null;
+    });
   }
 
-  // ── Destination IP (first only) ──
-  const dstBlock = extractBlock(raw, /Destination IP\s*:/i);
-  let ipDestination = "-", countryCodeIpDestination = "-";
-  for (const line of dstBlock) {
-    const ipM = line.match(/([\d.]+)/);
-    if (ipM && ipDestination === "-") ipDestination = ipM[1];
-    const cM = line.match(/\(([^)]+)\)/);
-    if (cM && countryCodeIpDestination === "-") countryCodeIpDestination = cM[1].trim();
-  }
-  if (ipDestination === "-") {
-    const inlineM = raw.match(/Destination IP\s*:\s*([\d.]+)/i);
-    if (inlineM) ipDestination = inlineM[1];
-  }
-  // "(Internal)" bisa di baris terpisah
+  // ── Destination IP (semua, join \n) ──
+  const ipDestination = getMultiBlock(raw, /Destination IP\s*:/i, (l) => {
+    const m = l.match(/([\d.]+)/);
+    return m ? m[1] : null;
+  });
+
+  // ── Country Code IP Destination (semua, join \n) ──
+  // "(Internal)" bisa muncul sebagai baris tersendiri di blok Destination IP
+  let countryCodeIpDestination = getMultiBlock(raw, /Destination IP\s*:/i, (l) => {
+    const m = l.match(/\(([^)]+)\)/);
+    return m ? m[1].trim() : null;
+  });
   if (countryCodeIpDestination === "-") {
     const afterDst = raw.match(/Destination IP\s*:\s*[\n\s\d.]+\(([^)]+)\)/i);
     if (afterDst) countryCodeIpDestination = afterDst[1].trim();
   }
 
-  // ── Destination Port (first only) ──
-  const dstPortBlock  = extractBlock(raw, /Destination Port\s*:/i);
-  const dstPortInline = extractFirst(raw, /Destination Port\s*:\s*(.+)/i);
-  const destinationPort = dstPortBlock[0] || dstPortInline;
+  // ── Destination Port (semua, join \n) ──
+  const destinationPort = getMultiBlock(raw, /Destination Port\s*:/i);
 
-  // ── Destination Host ──
-  const destinationHost = extractFirst(raw, /Destination Host\s*:\s*(.+)/i);
+  // ── Destination Host (semua, join \n) ──
+  const destinationHost = getMultiBlock(raw, /Destination Host\s*:/i);
 
   // ── Threat Category ──
   const threatCategory =
@@ -177,42 +181,28 @@ const noted = "";
   const subTechnique = extractFirst(raw, /Sub[-\s]?Technique\s*:\s*(.+)/i);
 
   return {
-    // kolom 1–2
     alarmsName,
     createdBy,
-    // Event Time → split Date + Time
     eventDate,
     eventTime,
-    // Ticket Date & Time → split Date + Time (manual)
     ticketDate,
     ticketTime,
-    // kolom berikutnya
     socResponseTime,
     severity,
-    // DJKI Respond Time → sub-kolom Date + Time (manual)
     djkiRespondDate,
     djkiRespondTime,
-    // DJKI Response Time (manual)
     djkiResponseTime,
-    // Ticket ID (manual)
     ticketId,
-    // Event Status
     eventStatus,
-    // Action
     action,
-    // Log Source (manual)
     logSource,
-    // IP fields
     ipSource,
     countryCodeIpSource,
-    // Noted
     noted,
-    // Destination
     ipDestination,
     countryCodeIpDestination,
     destinationPort,
     destinationHost,
-    // Classification
     threatCategory,
     stage,
     tactic,
@@ -221,26 +211,17 @@ const noted = "";
   };
 }
 
-// ─── column definition (urutan sesuai spreadsheet DJKI) ──────────────────────
-//
-//  Alarms Name | Created By | Event Time (Date+Time) | Ticket Date & Time (Date+Time)
-//  | SOC Response Time | Severity | DJKI Respond Time (Date+Time) | DJKI Response Time
-//  | Ticket ID | Event Status | Action | Log Source | IP Source | Country Code IP Source
-//  | Noted | IP Destination | Country Code IP Destination | Destination Port
-//  | Destination Host | Threat Category | Stage | Tactic | Technique | Sub Technique
+// ─── column definition ────────────────────────────────────────────────────────
 
 const COLUMNS = [
   { key: "alarmsName",               label: "Alarms Name" },
   { key: "createdBy",                label: "Created By" },
-  // Event Time dipecah 2 kolom
   { key: "eventDate",                label: "Event Time - Date" },
   { key: "eventTime",                label: "Event Time - Time" },
-  // Ticket Date & Time dipecah 2 kolom
   { key: "ticketDate",               label: "Ticket Date & Time - Date" },
   { key: "ticketTime",               label: "Ticket Date & Time - Time" },
   { key: "socResponseTime",          label: "SOC Response Time" },
   { key: "severity",                 label: "Severity" },
-  // DJKI Respond Time dipecah 2 kolom (sesuai sub-header Date | Time di sheet)
   { key: "djkiRespondDate",          label: "DJKI Respond Time - Date" },
   { key: "djkiRespondTime",          label: "DJKI Respond Time - Time" },
   { key: "djkiResponseTime",         label: "DJKI Response Time" },
@@ -287,17 +268,17 @@ export function TicketProvider({ children }) {
   const clearAll = useCallback(() => { setTickets([]); }, []);
 
   const exportToCSV = useCallback(() => {
-    const header = COLUMNS.map((c) => `"${c.label}"`).join(",");
-    const rows   = tickets.map((t) =>
-      COLUMNS.map((c) => `"${(t[c.key] ?? "-").toString().replace(/"/g, '""')}"`).join(",")
-    );
-    const csv  = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = "djki_tickets.csv"; a.click();
-    URL.revokeObjectURL(url);
-  }, [tickets]);
+  const header = COLUMNS.map((c) => `"${c.label}"`).join(",");
+  const rows = tickets.map((t) =>
+    COLUMNS.map((c) => `"${(t[c.key] ?? "-").toString().replace(/"/g, '""')}"`).join(",")
+  );
+  const csv = [header, ...rows].join("\r\n");  // ← CRLF
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });  // ← BOM
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "djki_tickets.csv"; a.click();
+  URL.revokeObjectURL(url);
+}, [tickets]);
 
   return (
     <DJKITicketContext.Provider value={{ tickets, rawInput, setRawInput, error, addTicket, removeTicket, clearAll, exportToCSV, columns: COLUMNS }}>

@@ -44,12 +44,36 @@ export default function DJKITicketParserPage() {
   const [copiedRow, setCopiedRow] = useState(null);
 
   const buildTSV = useCallback((rows, includeHeader = true) => {
-    const header = columns.map((c) => c.label).join("\t");
-    const body   = rows.map((ticket) =>
-      columns.map((c) => (ticket[c.key] ?? "-").toString().replace(/\t|\n|\r/g, " ")).join("\t")
-    );
-    return includeHeader ? [header, ...body].join("\n") : body.join("\n");
-  }, [columns]);
+  const header = columns.map((c) => `"${c.label}"`).join("\t");
+
+  const MULTILINE_KEYS = [
+    "ipSource",
+    "countryCodeIpSource",
+    "ipDestination",
+    "countryCodeIpDestination",
+    "destinationPort",
+    "destinationHost",
+  ];
+
+  const body = rows.map((ticket) =>
+    columns.map((c) => {
+      let val = (ticket[c.key] ?? "-").toString();
+
+      // escape quote
+      val = val.replace(/"/g, '""');
+
+      if (MULTILINE_KEYS.includes(c.key)) {
+        return `"${val.replace(/\t/g, " ")}"`;
+      }
+
+      return `"${val.replace(/\t|\n|\r/g, " ")}"`;
+    }).join("\t")
+  );
+
+  return includeHeader
+    ? [header, ...body].join("\n")
+    : body.join("\n");
+}, [columns]);
 
   const copyAll = useCallback(() => {
     navigator.clipboard.writeText(buildTSV(tickets, true)).then(() => {
@@ -58,13 +82,36 @@ export default function DJKITicketParserPage() {
     });
   }, [tickets, buildTSV]);
 
-  const copyRow = useCallback((ticket, idx) => {
-    const row = columns.map((c) => (ticket[c.key] ?? "-").toString().replace(/\t|\n|\r/g, " ")).join("\t");
-    navigator.clipboard.writeText(row).then(() => {
-      setCopiedRow(idx);
-      setTimeout(() => setCopiedRow(null), 2500);
-    });
-  }, [columns]);
+const copyRow = useCallback((ticket, idx) => {
+  const MULTILINE_KEYS = [
+    "ipSource",
+    "countryCodeIpSource",
+    "ipDestination",
+    "countryCodeIpDestination",
+    "destinationPort",
+    "destinationHost",
+  ];
+
+  const row = columns.map((c) => {
+    let val = (ticket[c.key] ?? "-").toString();
+
+    // escape quote
+    val = val.replace(/"/g, '""');
+
+    // multiline columns
+    if (MULTILINE_KEYS.includes(c.key)) {
+      return `"${val.replace(/\t/g, " ")}"`;
+    }
+
+    // normal columns
+    return `"${val.replace(/\t|\n|\r/g, " ")}"`;
+  }).join("\t");
+
+  navigator.clipboard.writeText(row).then(() => {
+    setCopiedRow(idx);
+    setTimeout(() => setCopiedRow(null), 2500);
+  });
+}, [columns]);
 
   return (
     <div className="min-h-screen text-slate-300 text-xs font-mono">
@@ -186,6 +233,9 @@ export default function DJKITicketParserPage() {
               <table className="w-full border-collapse text-[11px] font-mono">
                 <thead>
                   <tr className="bg-[#0d1117]/80">
+                    <th className="px-3 py-2.5 text-center text-slate-600 font-bold border-b border-slate-700/50 min-w-[80px]">
+                      Aksi
+                    </th>
                     <th className="px-3 py-2.5 text-left text-slate-600 font-bold border-b border-slate-700/50 whitespace-nowrap">
                       #
                     </th>
@@ -194,9 +244,6 @@ export default function DJKITicketParserPage() {
                         {col.label}
                       </th>
                     ))}
-                    <th className="px-3 py-2.5 text-center text-slate-600 font-bold border-b border-slate-700/50 min-w-[80px]">
-                      Aksi
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -208,24 +255,6 @@ export default function DJKITicketParserPage() {
                         idx % 2 === 0 ? "bg-slate-900/40" : "bg-slate-800/20",
                       ].join(" ")}
                     >
-                      <td className="px-3 py-2.5 text-slate-600 font-bold">{idx + 1}</td>
-                      {columns.map((col) => {
-                        const val = ticket[col.key] ?? "-";
-                        if (col.key === "severity")        return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><SeverityBadge value={val} /></td>;
-                        if (col.key === "statusTicketing") return <td key={col.key} className="px-3 py-2.5 whitespace-nowrap"><StatusBadge value={val} /></td>;
-                        return (
-                          <td
-                            key={col.key}
-                            title={val}
-                            className={[
-                              "px-3 py-2.5 whitespace-nowrap max-w-[180px] overflow-hidden text-ellipsis",
-                              val === "-" ? "text-slate-700" : "text-slate-300",
-                            ].join(" ")}
-                          >
-                            {val}
-                          </td>
-                        );
-                      })}
                       <td className="px-3 py-2.5 text-center whitespace-nowrap">
                         <button
                           onClick={() => copyRow(ticket, idx)}
@@ -247,6 +276,58 @@ export default function DJKITicketParserPage() {
                           ×
                         </button>
                       </td>
+                      <td className="px-3 py-2.5 text-slate-600 font-bold">{idx + 1}</td>
+                      
+                      {columns.map((col) => {
+  const val = (ticket[col.key] ?? "-").toString();
+
+  const isMultiLine = [
+    "ipSource",
+    "countryCodeIpSource",
+    "ipDestination",
+    "countryCodeIpDestination",
+    "destinationPort",
+    "destinationHost",
+  ].includes(col.key);
+
+  if (col.key === "severity") {
+    return (
+      <td
+        key={col.key}
+        className="px-3 py-2.5 whitespace-nowrap align-top"
+      >
+        <SeverityBadge value={val} />
+      </td>
+    );
+  }
+
+  if (col.key === "eventStatus") {
+    return (
+      <td
+        key={col.key}
+        className="px-3 py-2.5 whitespace-nowrap align-top"
+      >
+        <StatusBadge value={val} />
+      </td>
+    );
+  }
+
+  return (
+    <td
+      key={col.key}
+      title={val}
+      className={[
+        "px-3 py-2.5 align-top border-b border-slate-800/40",
+        isMultiLine
+          ? "whitespace-pre-line break-words min-w-[140px] leading-relaxed"
+          : "whitespace-nowrap",
+        val === "-" ? "text-slate-700" : "text-slate-300",
+      ].join(" ")}
+    >
+      {val}
+    </td>
+  );
+})}
                     </tr>
                   ))}
                 </tbody>
