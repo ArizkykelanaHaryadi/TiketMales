@@ -105,7 +105,7 @@ const signature = signatureLines.length
   if (waktuDeteksi !== "-") {
     const parts = waktuDeteksi.split(" ");
     eventDate = parts[0] || "-";
-    eventTime = parts[1] || "-";
+    eventTime = parts[1] ? parts[1].split(":").slice(0, 2).join(":") : "-";
   }
 
   return {
@@ -167,7 +167,7 @@ const COLUMNS = [
   { key: "action", label: "Action" },
   { key: "eventDate", label: "Event Date" },
   { key: "eventTime", label: "Event Time" },
-  { key: "ticketDateTime", label: "Ticket Date & Time" },
+  { key: "eventDate", label: "Event Date" },
   { key: "socResponseTime", label: "SOC Response Time" },
 
   // ✅ sesuai request: TIDAK DIHAPUS

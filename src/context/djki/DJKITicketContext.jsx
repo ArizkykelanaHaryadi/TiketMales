@@ -45,20 +45,6 @@ function getMultiBlock(raw, labelPattern, mapFn = (l) => l) {
   : "-";
 }
 
-function parseIpFirst(raw, labelPattern) {
-  const mi = raw.match(labelPattern);
-  if (mi && mi[1] && /[\d.]+/.test(mi[1])) {
-    const ipM = mi[1].match(/([\d.]+)/);
-    if (ipM) return ipM[1];
-  }
-  const block = extractBlock(raw, labelPattern);
-  for (const line of block) {
-    const ipM = line.match(/([\d.]+)/);
-    if (ipM) return ipM[1];
-  }
-  return "-";
-}
-
 // ─── main parser ─────────────────────────────────────────────────────────────
 
 function parseTicketDJKI(raw) {
@@ -68,10 +54,19 @@ function parseTicketDJKI(raw) {
       ? extractFirst(raw, /Sec\.?\s*Event\s*:\s*(.+)/i)
       : extractFirst(raw, /Security Event\s*:\s*(.+)/i);
 
-  // ── Created By ──
+  // ── Signature (bisa lebih dari satu baris, join \n) ──
+  const signature = getMultiBlock(raw, /Signature\s*:/i);
+
+  // ── Created By — manual ──
   const createdBy = "";
 
-  // ── Event Date / Event Time (split) ──
+  // ── Case ID ──
+  const caseId =
+    extractFirst(raw, /Case ID\s*:\s*(.+)/i) !== "-"
+      ? extractFirst(raw, /Case ID\s*:\s*(.+)/i)
+      : extractFirst(raw, /Ticket ID\s*:\s*(.+)/i);
+
+  // ── Event Time (Date / Time split) ──
   const waktuDeteksi = extractFirst(raw, /Waktu Deteksi\s*:\s*(.+)/i);
   let eventDate = "-", eventTime = "-";
   if (waktuDeteksi !== "-") {
@@ -80,28 +75,21 @@ function parseTicketDJKI(raw) {
     if (parts[1]) eventTime = parts[1];
   }
 
-  // ── Ticket Date & Ticket Time — diisi manual di Sheets ──
+  // ── Ticket Date & Time (Date / Time split) — manual ──
   const ticketDate = "-";
   const ticketTime = "-";
 
-  // ── SOC Response Time — diisi manual ──
+  // ── SOC Response Time — manual ──
   const socResponseTime = "-";
+
+  // ── Time Resolution — manual ──
+  const timeResolution = "-";
 
   // ── Severity ──
   const severity =
     extractFirst(raw, /Category\s*:\s*(.+)/i) !== "-"
       ? extractFirst(raw, /Category\s*:\s*(.+)/i)
       : extractFirst(raw, /Severity\s*:\s*(.+)/i);
-
-  // ── DJKI Respond Time (Date + Time sub-kolom) — manual ──
-  const djkiRespondDate = "-";
-  const djkiRespondTime = "-";
-
-  // ── DJKI Response Time — manual ──
-  const djkiResponseTime = "-";
-
-  // ── Ticket ID — manual ──
-  const ticketId = "-";
 
   // ── Event Status ──
   const eventStatus =
@@ -124,11 +112,6 @@ function parseTicketDJKI(raw) {
     action = "SOAR Action";
   }
 
-  const noted = "";
-
-  // ── Log Source — manual ──
-  const logSource = "-";
-
   // ── Source IP (semua, join \n) ──
   const ipSource = getMultiBlock(raw, /Source IP\s*:/i, (l) => {
     const m = l.match(/([\d.]+)/);
@@ -144,6 +127,9 @@ function parseTicketDJKI(raw) {
       return m ? m[1].trim() : null;
     });
   }
+
+  // ── Noted — manual ──
+  const noted = "";
 
   // ── Destination IP (semua, join \n) ──
   const ipDestination = getMultiBlock(raw, /Destination IP\s*:/i, (l) => {
@@ -180,22 +166,27 @@ function parseTicketDJKI(raw) {
   const technique    = extractFirst(raw, /Technique\s*:\s*(.+)/i);
   const subTechnique = extractFirst(raw, /Sub[-\s]?Technique\s*:\s*(.+)/i);
 
+  // ── DJKI Respond Time (Date / Time split) — manual ──
+  const djkiRespondDate = "-";
+  const djkiRespondTime = "-";
+
+  // ── DJKI Response Time — manual ──
+  const djkiResponseTime = "-";
+
   return {
     alarmsName,
+    signature,
     createdBy,
+    caseId,
     eventDate,
     eventTime,
     ticketDate,
     ticketTime,
     socResponseTime,
+    timeResolution,
     severity,
-    djkiRespondDate,
-    djkiRespondTime,
-    djkiResponseTime,
-    ticketId,
     eventStatus,
     action,
-    logSource,
     ipSource,
     countryCodeIpSource,
     noted,
@@ -208,6 +199,9 @@ function parseTicketDJKI(raw) {
     tactic,
     technique,
     subTechnique,
+    djkiRespondDate,
+    djkiRespondTime,
+    djkiResponseTime,
   };
 }
 
@@ -215,20 +209,19 @@ function parseTicketDJKI(raw) {
 
 const COLUMNS = [
   { key: "alarmsName",               label: "Alarms Name" },
+  { key: "signature",                label: "Signature" },
   { key: "createdBy",                label: "Created By" },
+  { key: "caseId",                   label: "Case ID" },
   { key: "eventDate",                label: "Event Time - Date" },
   { key: "eventTime",                label: "Event Time - Time" },
-  { key: "ticketDate",               label: "Ticket Date & Time - Date" },
+  { key: "eventDate",                label: "Event Time - Date" },
   { key: "ticketTime",               label: "Ticket Date & Time - Time" },
   { key: "socResponseTime",          label: "SOC Response Time" },
+  { key: "timeResolution",           label: "Time Resolution" },
+  { key: "timeResolution",           label: "Time Resolution" },
   { key: "severity",                 label: "Severity" },
-  { key: "djkiRespondDate",          label: "DJKI Respond Time - Date" },
-  { key: "djkiRespondTime",          label: "DJKI Respond Time - Time" },
-  { key: "djkiResponseTime",         label: "DJKI Response Time" },
-  { key: "ticketId",                 label: "Ticket ID" },
   { key: "eventStatus",              label: "Event Status" },
   { key: "action",                   label: "Action" },
-  { key: "logSource",                label: "Log Source" },
   { key: "ipSource",                 label: "IP Source" },
   { key: "countryCodeIpSource",      label: "Country Code IP Source" },
   { key: "noted",                    label: "Noted" },

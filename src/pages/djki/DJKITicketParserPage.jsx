@@ -47,6 +47,7 @@ export default function DJKITicketParserPage() {
   const header = columns.map((c) => `"${c.label}"`).join("\t");
 
   const MULTILINE_KEYS = [
+    "signature",
     "ipSource",
     "countryCodeIpSource",
     "ipDestination",
@@ -84,6 +85,7 @@ export default function DJKITicketParserPage() {
 
 const copyRow = useCallback((ticket, idx) => {
   const MULTILINE_KEYS = [
+    "signature",
     "ipSource",
     "countryCodeIpSource",
     "ipDestination",
@@ -282,6 +284,7 @@ const copyRow = useCallback((ticket, idx) => {
   const val = (ticket[col.key] ?? "-").toString();
 
   const isMultiLine = [
+    "signature",
     "ipSource",
     "countryCodeIpSource",
     "ipDestination",
